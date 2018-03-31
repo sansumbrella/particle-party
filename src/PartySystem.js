@@ -4,6 +4,19 @@ import { List, Record } from "immutable";
 const mix = (a, b, t) => a + (b - a) * t;
 
 /**
+ * Particle System (State)
+ * Particle Display (Component)
+ *
+ * Particle system state could be more react-like if every update returned a new array of
+ * particles that is sent to the particle display as a prop. Might have weirdness with the canvas
+ * not existing on the first frame of the .
+ *
+ * Emitter state is stored in the particle system and can be updated by EmitterGui calling events.
+ * This causes EmitterGui to receive the new emitter state as a prop and re-render.
+ * <EmitterGui emitter={emitter} />
+ */
+
+/**
  * Render as SVG overlaid on canvas.
  */
 export class Emitter {
@@ -142,12 +155,6 @@ export default class PartySystem extends Component {
   }
 
   componentDidMount() {
-    const { width, height } = this.props;
-    const { canvas, gui } = this.refs;
-    canvas.width = width;
-    canvas.height = height;
-    gui.setAttribute("width", width);
-    gui.setAttribute("height", height);
     this.draw();
   }
 
@@ -156,12 +163,14 @@ export default class PartySystem extends Component {
   }
 
   render() {
-    const { showGui } = this.props;
+    const { width, height, showGui } = this.props;
     const gui = this.props.emitters.map(em => em.gui());
     return (
       <div className="host">
-        <canvas ref="canvas" />
-        <svg ref="gui">{showGui && gui}</svg>
+        <canvas ref="canvas" width={width} height={height} />
+        <svg width={width} height={height}>
+          {showGui && gui}
+        </svg>
       </div>
     );
   }
