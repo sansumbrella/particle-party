@@ -140,18 +140,22 @@ export default class PartySystem extends Component {
 
   draw = time => {
     const { emitters } = this.props;
+
     const newParticles = emitters
       .map(emitter => emitter.step(0.016))
       .reduce((collect, more) => collect.concat(more), []);
 
     this.particles = this.particles
       .filter(particleIsAlive)
-      .map(p => particleUpdate(p, 0.016))
-      .push(...newParticles);
+      .push(...newParticles)
+      .map(p => particleUpdate(p, 0.016));
+
     const { canvas } = this.refs;
     const ctx = canvas.getContext("2d");
     const [w, h] = [canvas.width, canvas.height];
-    ctx.clearRect(0, 0, w, h);
+    // ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = `hsla(0, 0%, 100%, 0.2`;
+    ctx.fillRect(0, 0, w, h);
 
     this.particles.forEach(p => {
       const hue = Math.round(p.individuality * 360);
