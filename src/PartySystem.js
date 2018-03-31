@@ -119,7 +119,15 @@ export default class PartySystem extends Component {
   render() {
     const { showGui } = this.props;
     const gui = this.props.emitters.map((em, index) => (
-      <circle key={index} cx={em.x} cy={em.y} r={10} />
+      <circle
+        onMouseOver={evt => console.log("moused over", em)}
+        onMouseUp={evt => console.log("mouse up", em)}
+        onMouseDown={evt => console.log("mouse down", em)}
+        key={index}
+        cx={em.x}
+        cy={em.y}
+        r={10}
+      />
     ));
     return (
       <div className="host">
