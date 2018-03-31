@@ -1,6 +1,23 @@
 import React, { Fragment, Component } from "react";
 import { List, Record } from "immutable";
 
+/**
+ * Render as SVG overlaid on canvas.
+ */
+export class Emitter extends Component {
+  render() {
+    const { x, y } = this.props;
+    return <circle cx={x} cy={y} r={20} />;
+  }
+  /**
+   * Returns an array of particles emitted during the current simulated interval.
+   * @param {double} dt - amount of time to simulate
+   */
+  step(dt) {}
+}
+
+export class Attractor {}
+
 export class Particle extends Record({
   age: 0,
   individuality: Math.random(),
@@ -41,6 +58,10 @@ const burst = (particles, location) => {
   });
 };
 
+/**
+ * Renders a realtime particle system to Canvas.
+ * Renders gui elements to SVG overlaid on the Canvas.
+ */
 export default class PartySystem extends Component {
   constructor(props) {
     super(props);
@@ -49,8 +70,12 @@ export default class PartySystem extends Component {
   }
 
   componentDidMount() {
-    const canvas = this.refs.canvas;
-    this.context = canvas.getContext("2d");
+    const { width, height } = this.props;
+    const { canvas, gui } = this.refs;
+    canvas.width = width;
+    canvas.height = height;
+    gui.setAttribute("width", width);
+    gui.setAttribute("height", height);
     this.draw();
   }
 
@@ -59,38 +84,41 @@ export default class PartySystem extends Component {
   }
 
   render() {
+    const { children, showGui } = this.props;
     return (
-      <Fragment>
-        <canvas
-          ref="canvas"
-          width="400"
-          height="400"
+      <div className="host">
+        <canvas ref="canvas" />
+        <svg
+          ref="gui"
           onClick={event => {
             this.particles = burst(this.particles, {
               x: event.nativeEvent.offsetX,
               y: event.nativeEvent.offsetY
             });
           }}
-        />
-      </Fragment>
+        >
+          {showGui && children}
+        </svg>
+      </div>
     );
   }
 
-  addParticles(location) {
+  addParticles = location => {
     this.particles = this.particles.push(
       new Particle({
         individuality: Math.round(100 * Math.random()) / 100,
         ...location
       })
     );
-  }
+  };
 
   draw = time => {
     this.particles = this.particles
       .filter(particleIsAlive)
       .map(p => particleUpdate(p, 0.016));
-    const ctx = this.context;
-    const [w, h] = [this.context.canvas.width, this.context.canvas.height];
+    const { canvas } = this.refs;
+    const ctx = canvas.getContext("2d");
+    const [w, h] = [canvas.width, canvas.height];
     ctx.clearRect(0, 0, w, h);
 
     this.particles.forEach(p => {
