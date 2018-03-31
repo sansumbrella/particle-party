@@ -40,6 +40,45 @@ export class Emitter {
     return particles;
   }
 
+  /**
+   * Returns SVG element(s) to render as a gui for this Emitter.
+   */
+  gui() {
+    const startDrag = event => {
+      console.log("start drag", this, event);
+      this.dragging = true;
+    };
+
+    const endDrag = event => {
+      if (this.dragging) {
+        console.log("end drag", this, event);
+        this.dragging = false;
+      }
+    };
+
+    const handleDrag = event => {
+      const { clientX, clientY } = event;
+      console.log(event.target);
+      this.x = event.clientX;
+      this.y = event.clientY;
+      console.log(event.clientX, event.clientY, this.x, this.y);
+    };
+
+    const { x, y } = this;
+    return (
+      <circle
+        onMouseDown={startDrag}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        onMouseMove={handleDrag}
+        key={[x, y].toString()}
+        cx={x}
+        cy={y}
+        r={10}
+      />
+    );
+  }
+
   vx = () => {
     return mix(-100, 100, Math.random());
   };
@@ -118,17 +157,7 @@ export default class PartySystem extends Component {
 
   render() {
     const { showGui } = this.props;
-    const gui = this.props.emitters.map((em, index) => (
-      <circle
-        onMouseOver={evt => console.log("moused over", em)}
-        onMouseUp={evt => console.log("mouse up", em)}
-        onMouseDown={evt => console.log("mouse down", em)}
-        key={index}
-        cx={em.x}
-        cy={em.y}
-        r={10}
-      />
-    ));
+    const gui = this.props.emitters.map(em => em.gui());
     return (
       <div className="host">
         <canvas ref="canvas" />
