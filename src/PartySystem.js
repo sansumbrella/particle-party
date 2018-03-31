@@ -1,20 +1,52 @@
-import React, { Fragment, Component } from "react";
+import React, { Component } from "react";
 import { List, Record } from "immutable";
+
+const mix = (a, b, t) => a + (b - a) * t;
 
 /**
  * Render as SVG overlaid on canvas.
  */
 export class Emitter {
   constructor(props) {
-    const { x = 100, y = 100 } = props;
+    const { x = 100, y = 100, rate = 20 } = props;
     this.x = x;
     this.y = y;
+    this.time = 0.0;
+    this.frequency = 1 / rate;
   }
   /**
    * Returns an array of particles emitted during the current simulated interval.
    * @param {double} dt - amount of time to simulate
    */
-  step(dt) {}
+  step(dt) {
+    const totalTime = this.time + dt;
+    const count = Math.floor(totalTime / this.frequency);
+    this.time = totalTime - count * this.frequency;
+    const { x, y } = this;
+
+    const particles = [];
+    for (let i = 0; i < count; i += 1) {
+      particles.push(
+        new Particle({
+          x,
+          y,
+          vx: this.vx(),
+          vy: this.vy(),
+          individuality: Math.round(100 * Math.random()) / 100
+        })
+      );
+    }
+
+    return particles;
+  }
+
+  vx = () => {
+    return mix(-100, 100, Math.random());
+  };
+
+  vy = () => {
+    return mix(-100, -500, Math.random());
+  };
 }
 
 export class Attractor {}
@@ -40,7 +72,7 @@ export const particleUpdate = (particle, dt = 0.016) => {
 };
 
 export const particleIsAlive = particle => {
-  return particle.age < 10;
+  return particle.age < 4;
 };
 
 const burst = (particles, location) => {
@@ -86,23 +118,13 @@ export default class PartySystem extends Component {
 
   render() {
     const { showGui } = this.props;
-    const gui = this.props.emitters.map(em => (
-      <circle cx={em.x} cy={em.y} r={10} />
+    const gui = this.props.emitters.map((em, index) => (
+      <circle key={index} cx={em.x} cy={em.y} r={10} />
     ));
     return (
       <div className="host">
         <canvas ref="canvas" />
-        <svg
-          ref="gui"
-          onClick={event => {
-            this.particles = burst(this.particles, {
-              x: event.nativeEvent.offsetX,
-              y: event.nativeEvent.offsetY
-            });
-          }}
-        >
-          {showGui && gui}
-        </svg>
+        <svg ref="gui">{showGui && gui}</svg>
       </div>
     );
   }
@@ -117,10 +139,15 @@ export default class PartySystem extends Component {
   };
 
   draw = time => {
-    console.log(this.props.children);
+    const { emitters } = this.props;
+    const newParticles = emitters
+      .map(emitter => emitter.step(0.016))
+      .reduce((collect, more) => collect.concat(more), []);
+
     this.particles = this.particles
       .filter(particleIsAlive)
-      .map(p => particleUpdate(p, 0.016));
+      .map(p => particleUpdate(p, 0.016))
+      .push(...newParticles);
     const { canvas } = this.refs;
     const ctx = canvas.getContext("2d");
     const [w, h] = [canvas.width, canvas.height];
