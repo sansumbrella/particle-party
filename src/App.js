@@ -6,9 +6,15 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <PartySystem showGui={true} width={400} height={600}>
-          <Emitter x={100} y={100} rate={60} />
-        </PartySystem>
+        <PartySystem
+          showGui={true}
+          width={400}
+          height={600}
+          emitters={[
+            new Emitter({ x: 100, y: 100 }),
+            new Emitter({ x: 200, y: 400 })
+          ]}
+        />
       </div>
     );
   }

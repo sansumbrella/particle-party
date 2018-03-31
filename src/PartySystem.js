@@ -4,10 +4,11 @@ import { List, Record } from "immutable";
 /**
  * Render as SVG overlaid on canvas.
  */
-export class Emitter extends Component {
-  render() {
-    const { x, y } = this.props;
-    return <circle cx={x} cy={y} r={20} />;
+export class Emitter {
+  constructor(props) {
+    const { x = 100, y = 100 } = props;
+    this.x = x;
+    this.y = y;
   }
   /**
    * Returns an array of particles emitted during the current simulated interval.
@@ -84,7 +85,10 @@ export default class PartySystem extends Component {
   }
 
   render() {
-    const { children, showGui } = this.props;
+    const { showGui } = this.props;
+    const gui = this.props.emitters.map(em => (
+      <circle cx={em.x} cy={em.y} r={10} />
+    ));
     return (
       <div className="host">
         <canvas ref="canvas" />
@@ -97,7 +101,7 @@ export default class PartySystem extends Component {
             });
           }}
         >
-          {showGui && children}
+          {showGui && gui}
         </svg>
       </div>
     );
@@ -113,6 +117,7 @@ export default class PartySystem extends Component {
   };
 
   draw = time => {
+    console.log(this.props.children);
     this.particles = this.particles
       .filter(particleIsAlive)
       .map(p => particleUpdate(p, 0.016));
