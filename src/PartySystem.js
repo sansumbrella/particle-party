@@ -1,7 +1,22 @@
 import React, { Component } from "react";
 import { List, Record } from "immutable";
 
+/**
+ * Returns a value in the range (a, b), modulated by t
+ * @param {Number} a
+ * @param {Number} b
+ * @param {Number} t - normalized value to control mixing
+ */
 const mix = (a, b, t) => a + (b - a) * t;
+
+/**
+ * Returns a function to convert 2d coordinates from client space to parent-relative space.
+ * @param {BoundingRect} parentBounds
+ */
+const localConverter = parentBounds => (x, y) => {
+  console.log("hiya, ", parentBounds, x, y);
+  return [x - parentBounds.left, y - parentBounds.top];
+};
 
 /**
  * Particle System (State)
@@ -53,45 +68,6 @@ export class Emitter {
     return particles;
   }
 
-  /**
-   * Returns SVG element(s) to render as a gui for this Emitter.
-   */
-  gui() {
-    const startDrag = event => {
-      console.log("start drag", this, event);
-      this.dragging = true;
-    };
-
-    const endDrag = event => {
-      if (this.dragging) {
-        console.log("end drag", this, event);
-        this.dragging = false;
-      }
-    };
-
-    const handleDrag = event => {
-      const { clientX, clientY } = event;
-      console.log(event.target);
-      this.x = event.clientX;
-      this.y = event.clientY;
-      console.log(event.clientX, event.clientY, this.x, this.y);
-    };
-
-    const { x, y } = this;
-    return (
-      <circle
-        onMouseDown={startDrag}
-        onMouseUp={endDrag}
-        onMouseLeave={endDrag}
-        onMouseMove={handleDrag}
-        key={[x, y].toString()}
-        cx={x}
-        cy={y}
-        r={10}
-      />
-    );
-  }
-
   vx = () => {
     return mix(-100, 100, Math.random());
   };
@@ -100,6 +76,80 @@ export class Emitter {
     return mix(-100, -500, Math.random());
   };
 }
+
+class DragManager {
+  constructor() {
+    this.target = null;
+    this.context = null;
+    this.startPosition = null;
+  }
+
+  ctx() {
+    return this.context || this.target;
+  }
+
+  startDrag(target, event) {
+    this.target = target;
+    this.startPosition = [target.x, target.y];
+    const ctx = this.ctx();
+    ctx.addEventListener("mouseup", this.stopDrag);
+    ctx.addEventListener("mouseleave", this.stopDrag);
+    ctx.addEventListener("touchended", this.stopDrag);
+  }
+
+  continueDrag(event) {
+    // this.target.setPosition(x, y);
+  }
+
+  stopDrag(event) {}
+}
+
+const dragManager = new DragManager();
+
+/**
+ * Returns SVG element(s) to render as a gui for this Emitter.
+ */
+const EmitterGui = props => {
+  const { update, emitter, onStart } = props;
+  const { x, y } = emitter;
+
+  const startDrag = event => {
+    // parent should register mouse move/up handlers to perform dragging
+    // onStart(this, event, emitter);
+    this.dragging = true;
+  };
+
+  const endDrag = event => {
+    if (this.dragging) {
+      console.log("end drag", this, event);
+      this.dragging = false;
+    }
+  };
+
+  const handleDrag = event => {
+    if (this.dragging) {
+      console.log("dragging");
+      const { clientX: x, clientY: y } = event;
+      // const [x, y] = [clientX, clientY];
+      emitter.x = x;
+      emitter.y = y;
+      update(emitter);
+    }
+  };
+
+  return (
+    <circle
+      onMouseDown={startDrag}
+      onMouseUp={endDrag}
+      onMouseLeave={endDrag}
+      onMouseMove={handleDrag}
+      key={[x, y].toString()}
+      cx={x}
+      cy={y}
+      r={10}
+    />
+  );
+};
 
 export class Attractor {}
 
@@ -168,9 +218,27 @@ export default class PartySystem extends Component {
     window.cancelAnimationFrame(this.animationFrameRequest);
   }
 
+  updateEmitter(index, emitter) {
+    console.log("update emitter: ", index, emitter);
+    const emitters = this.state.emitters;
+    emitters[index] = emitter;
+    this.setState({
+      emitters
+    });
+  }
+
   render() {
     const { width, height, showGui } = this.props;
-    const gui = this.state.emitters.map(em => em.gui());
+    const { canvas } = this.refs;
+    if (canvas) {
+      console.log("hi canvas");
+    }
+    const gui = this.state.emitters.map((em, index) => (
+      <EmitterGui
+        emitter={em}
+        update={emitter => this.updateEmitter(index, emitter)}
+      />
+    ));
     return (
       <div className="host">
         <canvas ref="canvas" width={width} height={height} />
