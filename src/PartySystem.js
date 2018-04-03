@@ -151,6 +151,12 @@ export default class PartySystem extends Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+      emitters: [
+        new Emitter({ x: 100, y: 100 }),
+        new Emitter({ x: 200, y: 400 })
+      ]
+    };
     this.particles = burst(new List(), { x: 200, y: 400 });
   }
 
@@ -164,7 +170,7 @@ export default class PartySystem extends Component {
 
   render() {
     const { width, height, showGui } = this.props;
-    const gui = this.props.emitters.map(em => em.gui());
+    const gui = this.state.emitters.map(em => em.gui());
     return (
       <div className="host">
         <canvas ref="canvas" width={width} height={height} />
@@ -185,7 +191,7 @@ export default class PartySystem extends Component {
   };
 
   draw = time => {
-    const { emitters } = this.props;
+    const { emitters } = this.state;
 
     const newParticles = emitters
       .map(emitter => emitter.step(0.016))
